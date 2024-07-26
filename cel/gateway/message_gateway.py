@@ -2,6 +2,7 @@ import asyncio
 from typing import Callable
 from loguru import logger as log
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger as log
 
 from cel.assistants.stream_content_chunk import StreamContentChunk
@@ -109,6 +110,19 @@ class MessageGateway:
             on_shutdown=[self.__shutdown],
             *args, **kwargs
         )
+
+        origins = [
+            "http://localhost:5000"
+        ]
+
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
         self.app.include_router(self.base_routes())
         self.assistant: BaseAssistant = assistant
         self.delivery_rate_control = delivery_rate_control
