@@ -112,14 +112,14 @@ class MessageGateway:
         )
 
         origins = [
-            "http://localhost:5000"
+            "*"
         ]
 
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,
             allow_credentials=True,
-            allow_methods=["*"],
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             allow_headers=["*"],
         )
 
@@ -275,7 +275,6 @@ class MessageGateway:
                         StreamMode.FULL, 
                         StreamMode.DIRECT], "Invalid StreamMode"
         
-        
         log.warning(f"Handling message: {message}")
         connector = message.lead.connector
         lead = message.lead
@@ -344,7 +343,7 @@ class MessageGateway:
                 
                 
                 
-            log.debug(f"Assistant response: {content}")
+            log.debug(f"Assistant response: {content}" + "subcero")
         else: 
             log.critical("No assistant available")
             if capture_repsonse:
