@@ -1,5 +1,6 @@
 import json
 import time
+import httpx
 from typing import Any, Callable, Dict, List
 from fastapi import APIRouter, BackgroundTasks, Request
 from loguru import logger as log
@@ -16,34 +17,45 @@ from cel.gateway.model.outgoing import (
 from .model.web_lead import WebLead
 from .model.web_message import WebMessage
 
+messages = []
+
 class WebConnector(BaseConnector):
 
+    # Endpoint de conexion total es "/web/message"
     endpoint = "/message"
+    
 
-    def __init__(self, stream_mode: StreamMode = StreamMode.SENTENCE):
+    def __init__(self, stream_mode: StreamMode = StreamMode.DIRECT):
         log.debug("Creating Web connector")
-        self.prefix = "/web"
+        self.prefix="/web"
         self.router = APIRouter(prefix=self.prefix)
         self.paused = False
         self.stream_mode = stream_mode
         self._create_routes(self.router)
 
     def _create_routes(self, router: APIRouter):
-        @self.router.post(f"{WebConnector.endpoint}")
+        @router.post(f"{WebConnector.endpoint}")
         async def chat_completion(request: Request, background_tasks: BackgroundTasks):
             data = await request.json()
             background_tasks.add_task(self._process_message, data)
+            print(messages, "+"*30)
+
+        @router.post(f"{WebConnector.endpoint}/pruebas")
+        async def text_persons(request: Request, background_tasks: BackgroundTasks):
+            payload = await request.json()
+            background_tasks.add_task(self._process_message, payload)
             return {"status": "ok"}
 
+    
     async def _process_message(self, payload: Dict[str, Any]):
         try:
             log.debug("Received Web Message")
-            log.debug(payload)
             msg = await WebMessage.load_from_message(payload, connector=self)
 
             if self.paused:
                 log.warning("Connector is paused, ignoring message")
-                return
+                return {"status": "paused"}
+
             if self.gateway:
                 async for m in self.gateway.process_message(msg, mode=self.stream_mode):
                     pass
@@ -53,10 +65,31 @@ class WebConnector(BaseConnector):
 
         except Exception as e:
             log.error(f"Error processing Web message: {e}")
+            return {"status": "error", "message": str(e)}
 
+
+    # Funcion que me retorna el status de recibido del mensaje 
     async def send_text_message(self, lead: WebLead, text: str, metadata: dict = {}, is_partial: bool = True):
-        print(f"Bot: {text}")
+        """ Envía un mensaje de texto parcial o completo y lo comunica al middleware.
+        
+        Args:
+            - lead [WebLead]: Información del lead
+            - text [str]: El texto a enviar
+            - metadata [dict]: Metadatos del mensaje
+            - is_partial [bool]: Indica si el mensaje es parcial
+        """ 
+        print("Are kidding me?")
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post("", json={"role": "System", "message": text})
+                log.debug(f"response for the front: {response.json()}")
+            except Exception as e:
+                log.error(f"Failed to send message to middleware: {e}")
 
+
+
+
+    # Funcion que retorna el mensaje del bot
     async def send_select_message(
         self, lead: WebLead, text: str, options: List[str], metadata: dict = {}, is_partial: bool = True
     ):
@@ -66,6 +99,7 @@ class WebConnector(BaseConnector):
         self, lead: WebLead, text: str, links: List[Dict[str, str]], metadata: dict = {}, is_partial: bool = True
     ):
         print(f"Bot: {text}")
+
 
     async def send_typing_action(self, lead: WebLead):
         log.warning("Sending typing action to Web is not implemented yet")
@@ -92,6 +126,8 @@ class WebConnector(BaseConnector):
             await self.send_link_message(
                 lead, message.content, links=message.links, metadata=message.metadata, is_partial=message.is_partial
             )
+        
+        return message
 
     def name(self) -> str:
         return "web"

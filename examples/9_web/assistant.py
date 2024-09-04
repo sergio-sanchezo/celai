@@ -55,7 +55,7 @@ ast = MacawAssistant(prompt=prompt_template, settings=MacawSettings(core_tempera
 gateway = MessageGateway(
     webhook_url=os.environ.get("WEBHOOK_URL"),
     assistant=ast,
-    host="0.0.0.0", port=3000,
+    host="0.0.0.0", port=5000,
     # VAPI uses streaming mode, no need for adaptive mode
     # message_enhancer=SmartMessageEnhancerOpenAI()
 )
