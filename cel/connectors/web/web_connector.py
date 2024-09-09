@@ -42,8 +42,10 @@ class WebConnector(BaseConnector):
         @router.post(f"{self.endpoint}")
         async def chat_completion(request: Request, background_tasks: BackgroundTasks):
             data = await request.json()
+            log.debug(data)
             background_tasks.add_task(self._process_message, data)
             print(data, "+" * 30)
+            return {"status": "ok"}
 
         @router.post(f"{self.endpoint}/pruebas")
         async def text_persons(request: Request, background_tasks: BackgroundTasks):
@@ -86,12 +88,17 @@ class WebConnector(BaseConnector):
         print("Are kidding me?")
         async with httpx.AsyncClient() as client:
             try:
+                data = {
+                    "conversation":f"{lead.session_id}",
+                    "role": "assistant",
+                    "content": text
+                }
+                print(self.web_url)
                 response = await client.post(
-                    self.web_url,
-                    data="hola desde el assistant"
-                    """  json={"conversation":"lead.session_id","role": "assitants", "content": text} """,
+                    f"{self.web_url}messages",
+                    json=data
                 )
-                log.debug(f"response for the front: {response.json()}")
+                log.debug(f"response for the front: {response.status_code}")
             except Exception as e:
                 log.error(f"Failed to send message to middleware: {e}")
 
