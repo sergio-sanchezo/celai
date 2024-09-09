@@ -13,14 +13,13 @@ class WebLead(ConversationLead):
 
     def to_dict(self):
         data = super().to_dict()
-        data['session_id'] = self.session_id
+        data["session_id"] = self.session_id
         return data
 
     @classmethod
     def from_dict(cls, lead_dict):
         return WebLead(
-            session_id=lead_dict.get("session_id"),
-            metadata=lead_dict.get("metadata")
+            session_id=lead_dict.get("session_id"), metadata=lead_dict.get("metadata")
         )
 
     def __str__(self):
@@ -28,12 +27,14 @@ class WebLead(ConversationLead):
 
     @classmethod
     def from_web_message(cls, message: dict, **kwargs):
-        session_id = str(message.get("session_id"))
+        session_id = str(message.get("conversation"))
         conversation_peer = ConversationPeer(
             name=message.get("name", "unknown"),
             id=session_id,
             phone=None,
             avatarUrl=None,
-            email=None
+            email=None,
         )
-        return WebLead(session_id=session_id, conversation_from=conversation_peer, **kwargs)
+        return WebLead(
+            session_id=session_id, conversation_from=conversation_peer, **kwargs
+        )
