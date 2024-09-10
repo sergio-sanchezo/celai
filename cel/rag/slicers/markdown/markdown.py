@@ -71,6 +71,7 @@ class MarkdownSlicer(Slicer):
         
         text = ""
         try:
+            print(f"Encoding: {self.encoding}")
             with open(self.file_path, encoding=self.encoding) as f:
                 # read all content
                 text = f.read()

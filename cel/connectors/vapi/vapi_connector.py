@@ -30,7 +30,7 @@ from cel.gateway.model.message import Message
 from cel.connectors.telegram.model.telegram_lead import TelegramLead
 from cel.gateway.model.message_gateway_context import MessageGatewayContext
 from cel.gateway.model.outgoing import OutgoingMessage
-
+from services.salesforce import createProspect
 
 
 
@@ -66,6 +66,16 @@ class VAPIConnector(BaseConnector):
             else:
                 #  TODO:
                 raise NotImplementedError("Non-streaming response is not implemented yet")
+
+        @router.post(F"{self.prefix}/createProspect")
+        async def create_prospect(request: Request):
+            data = await request.json()
+
+
+            # Usas el servicio de salesforce para crear un prospecto
+            create_prospect(data)
+
+            return Response(content=data, status_code=200)
 
         @router.post(f"{self.prefix}/functions")
         async def handle_function_call(request: Request):
@@ -139,7 +149,7 @@ class VAPIConnector(BaseConnector):
 
         
     async def send_typing_action(self, lead: TelegramLead):
-        log.warning("send_typing_action must be implemented in VAPI connector")
+        pass
         
         
         
