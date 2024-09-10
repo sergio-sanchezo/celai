@@ -335,7 +335,7 @@ class MessageGateway:
                     assert isinstance(chunk, StreamContentChunk), "stream must be a StreamChunk"
                     content += chunk.content
                     
-                    if capture_repsonse:
+                    if not capture_repsonse:
                         yield chunk.content
                         # pass
                     else:

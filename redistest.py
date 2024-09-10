@@ -7,8 +7,12 @@ client = Redis.from_url('redis://localhost:6379/0')
 # client.hset("blacklistmw", "+56352280778", '{"reason": "Spam"}')
 
 # REMOVE FROM BLACKLIST
-client.hdel("blacklistmw", "+56352280778")
+# client.hdel("blacklistmw", "+56352280778")
 
 # GET ENTRY
-# entry = client.hget("blacklistmw", "+56352280778")
-# print(json.loads(entry))
+entry = client.hget("blacklistmw", "+56352280778")
+
+if entry:
+    print(json.loads(entry))
+else:
+    print("Not found")
