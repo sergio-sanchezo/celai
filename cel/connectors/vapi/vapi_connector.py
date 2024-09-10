@@ -67,15 +67,16 @@ class VAPIConnector(BaseConnector):
                 #  TODO:
                 raise NotImplementedError("Non-streaming response is not implemented yet")
 
-        @router.post(F"{self.prefix}/createProspect")
+        @router.post("/chat/test")
         async def create_prospect(request: Request):
-            data = await request.json()
+            print("createProspect")
+            # data = await request.json()
 
 
             # Usas el servicio de salesforce para crear un prospecto
-            create_prospect(data)
+            # create_prospect(data)
 
-            return Response(content=data, status_code=200)
+            return Response(status_code=200)
 
         @router.post(f"{self.prefix}/functions")
         async def handle_function_call(request: Request):
