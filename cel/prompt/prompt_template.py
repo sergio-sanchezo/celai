@@ -36,6 +36,8 @@ class PromptTemplate:
             # replace the key with the value in the prompt
             key, value = task.result().popitem()
             prompt = prompt.replace(f"{{{key}}}", value)
+        
+        print(prompt)
         return prompt
             
 

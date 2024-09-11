@@ -174,15 +174,23 @@ class MessageGateway:
         try:
             for middleware in self.middlewares:
                 res = await middleware(message, message.lead.connector, self.assistant)
+
+                # Check if the middleware returned a tuple or just a boolean
+                if isinstance(res, tuple):
+                    status, custom_message = res
+                else:
+                    status, custom_message = res, None
+
                 # Break the chain if any middleware returns False
-                if not res:
-                    log.error(f"Middleware {type(middleware)} rejected message: {message.text}")
-                    return False
-            return True
+                if not status:
+                    log.error(f"Middleware rejected message: {message.text}")
+                    return False, custom_message
+
+            return True, None  # All middlewares passed, no custom message
         except Exception as e:
             log.error(f"Error processing middlewares: {e}")
-            return False
-        
+            return False, None  # Error in middleware processing, no custom message
+            
     async def __process_events(self, message: Message):
         try:
             connector = message.lead.connector
@@ -279,8 +287,13 @@ class MessageGateway:
         connector = message.lead.connector
         lead = message.lead
         
-        if not await self.__process_middlewares(message):
+        status, custom_message = await self.__process_middlewares(message)
+
+        if not status:
             log.warning(f"Message {message.lead.get_session_id()} rejected by middlewares")
+            if custom_message:
+                rejection_chunk = StreamContentChunk(content=custom_message, is_partial=False)
+                yield rejection_chunk
             return
         
         if not await self.__process_client_command(message):
@@ -335,7 +348,7 @@ class MessageGateway:
                     assert isinstance(chunk, StreamContentChunk), "stream must be a StreamChunk"
                     content += chunk.content
                     
-                    if capture_repsonse:
+                    if not capture_repsonse:
                         yield chunk.content
                         # pass
                     else:
