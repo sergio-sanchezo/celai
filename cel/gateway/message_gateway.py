@@ -294,6 +294,7 @@ class MessageGateway:
         if self.assistant:
             stream = self.assistant.new_message(message.lead, message.text, {})
             content = ''
+            # print("*"*30, "")
             
             if mode == StreamMode.SENTENCE:
                 async for sentence in streaming_sentence_detector_async(stream): 
@@ -323,7 +324,6 @@ class MessageGateway:
                     
                     if capture_repsonse:
                         yield chunk
-                        # pass
                     else:
                         await self.dispatch_outgoing_genai_message(message.lead, text=chunk.content, is_partial=chunk.is_partial)
                         await connector.send_typing_action(message.lead)
