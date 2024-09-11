@@ -1,5 +1,9 @@
 # LOAD ENV VARIABLES
 import os
+import sys
+
+# Add the way for use to find the file in the route that I need to use in the prompt
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # from loguru import logger as log
 # Load .env variables
@@ -28,9 +32,15 @@ from cel.assistants.common import Param
 from cel.assistants.function_context import FunctionContext
 from cel.gateway.message_gateway import StreamMode
 
+import os
+from loguru import logger as log
+log.remove()
+log.add(sys.stdout, format="<level>{level: <8}</level> | "
+    "<cyan>{file}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>")
+
 # Setup prompt
 # Read from the file prompt.txt
-prompt = "Eres un asistente que resuelve preguntas"
+prompt = "Eres Betty, un asistente especializado en ventas de ropa para la marca EchoModa"
 
 # Create the prompt template
 prompt_template = PromptTemplate(prompt)
@@ -56,7 +66,11 @@ ast = MacawAssistant(
 # mdm.load()
 # # Register the RAG model with the assistant
 # ast.set_rag_retrieval(mdm)
+path = "C:/Users/ASUS/Desktop/WorkSito/SunDevs/web_connector/celai/examples/9_web/faqnetlineone.md"
+mdm = MarkdownRAG("demoWebCel", file_path=path)
+mdm.load()
 
+ast.set_rag_retrieval(mdm)
 
 # Create the Message Gateway - This component is the core of the assistant
 # It handles the communication between the assistant and the connectors
@@ -64,14 +78,12 @@ gateway = MessageGateway(
     webhook_url=os.environ.get("WEBHOOK_URL"),
     assistant=ast,
     host="0.0.0.0",
-    port=4000,
-    # VAPI uses streaming mode, no need for adaptive mode
-    # message_enhancer=SmartMessageEnhancerOpenAI()
+    port=5000,
 )
 
 # VoIP Connector
 
-conn = WebConnector(web_url="http://localhost:5000/messages")
+conn = WebConnector(web_url="https://4cfd-152-201-84-71.ngrok-free.app/messages", stream_mode=StreamMode.DIRECT)
 
 # Register the connector with the gateway
 gateway.register_connector(conn)
