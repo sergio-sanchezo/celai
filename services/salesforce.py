@@ -24,5 +24,17 @@ def getUserByRUT(rut):
     return {}
 
 def createProspect(data):
-    #
+    # Extraer los campos necesarios de los "arguments"
+    prospect_data = {
+        'FirstName': data.get('first_name', 'Sergio'),
+        'LastName': data.get('last_name', 'Sanchez'),
+        'Company': data.get('company', 'Sundevs'),
+        'RUT__c': data.get('rut', '7172494'),
+        'Phone': data['phone'],
+        'Email': data['email'],
+        'Consulta_o_comentario__c': data['comment'],
+        'Status': 'No atendido'
+    }
+    # Crear el prospecto en Salesforce
+    result = sf.Lead.create(prospect_data)
     return result
