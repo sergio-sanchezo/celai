@@ -93,7 +93,6 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
             for vr in rag_response:
                 prompt += f"\n{vr.text or ''}"
 
-    log.debug(f"Prompt: {prompt}")
     # Prompt > System Message
     messages = [SystemMessage(prompt)]
     
@@ -122,9 +121,9 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
         else:
             response += delta    
     
-        # if delta.content:
-        #     # Shield the content from the response
-        #     yield StreamContentChunk(content=delta.content, is_partial=True)
+        if delta.content:
+            # Shield the content from the response
+            yield StreamContentChunk(content=delta.content, is_partial=True)
     
     # Append the final response
     messages.append(response)
@@ -168,9 +167,9 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
 
             # Process response
             response = llm_with_tools.invoke(messages)
-        else:
-            yield StreamContentChunk(content=response.content, is_partial=True)
-            break
+        # else:
+        #     yield StreamContentChunk(content=response.content, is_partial=True)
+        #     break
         
 
 

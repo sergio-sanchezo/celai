@@ -133,6 +133,7 @@ class VAPIConnector(BaseConnector):
                 id = "vapi-" + shortuuid.uuid()
                 async for chunk in self.gateway.process_message(msg, mode=StreamMode.DIRECT, capture_repsonse=True):
                     assert isinstance(chunk, StreamContentChunk), "stream chunk must be a StreamContentChunk object"
+                    print(f"data: {json.dumps(create_chunk_response(id=id, text=chunk.content))}\n\n")
                     yield f"data: {json.dumps(create_chunk_response(id=id, text=chunk.content))}\n\n"
                 
                 # end of stream 
