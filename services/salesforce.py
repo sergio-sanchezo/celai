@@ -38,3 +38,23 @@ def createProspect(data):
     # Crear el prospecto en Salesforce
     result = sf.Lead.create(prospect_data)
     return result
+
+def createProspectCampaign(data):
+
+    arguments = data.get("message", {}).get("toolCalls", [])[0].get("function", {}).get("arguments", {})
+    
+    prospect_data = {
+        'FirstName': arguments.get('FirstName', ''),
+        'LastName': arguments.get('LastName', ''),
+        'Company': arguments.get('Company', 'Unknown'),
+        'RUT__c': arguments.get('RUT__c', ''),
+        'Phone': arguments.get('Phone', ''),
+        'Email': arguments.get('Email', ''),
+        'Consulta_o_comentario__c': arguments.get('Consulta_o_comentario__c', ''),
+        'Status': 'No atendido',
+        'IsConverted': False
+    }
+
+    result = sf.Lead.create(prospect_data)
+    
+    return result

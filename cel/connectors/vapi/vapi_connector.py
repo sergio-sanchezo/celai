@@ -30,7 +30,9 @@ from cel.gateway.model.message import Message
 from cel.connectors.telegram.model.telegram_lead import TelegramLead
 from cel.gateway.model.message_gateway_context import MessageGatewayContext
 from cel.gateway.model.outgoing import OutgoingMessage
-from services.salesforce import createProspect
+from services.salesforce import createProspect, createProspectCampaign
+from fastapi.responses import JSONResponse
+
 
 
 
@@ -77,6 +79,18 @@ class VAPIConnector(BaseConnector):
             # create_prospect(data)
 
             return Response(status_code=200)
+        
+        @router.post("/createProspect")
+        async def create_prospect(request: Request):
+            try:
+                data = await request.json()
+                print("Received data:", json.dumps(data, indent=4))
+                createProspectCampaign(data)
+                return Response(content=json.dumps({"status": "success", "data": data}), status_code=200)
+            except Exception as e:
+                log.error(f"Error al crear prospecto: {str(e)}")
+                return Response(content=json.dumps({"status": "error", "message": str(e)}), status_code=500)
+
 
         @router.post(f"{self.prefix}/functions")
         async def handle_function_call(request: Request):
