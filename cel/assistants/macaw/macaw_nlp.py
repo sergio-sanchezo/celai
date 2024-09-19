@@ -59,10 +59,11 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
     )
 
     try:
-        # Tolling
+        # Toolling
         functions = ctx.functions
         if functions is not None and len(functions) > 0:
-            llm_with_tools = llm.bind_tools(map_functions_to_tool_messages(functions))
+            mapfuncs = map_functions_to_tool_messages(functions)
+            llm_with_tools = llm.bind_tools(mapfuncs)
         else:
             llm_with_tools = llm
     except Exception as e:
@@ -78,7 +79,7 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
     # Initial state  
     init_state = ctx.init_state or {}
     # Current state
-    current_state = {**(stored_state or {}), **init_state}
+    current_state = {**init_state, **(stored_state or {})}
 
     # Compile prompt
     # ------------------------------------------------------------------------
@@ -92,7 +93,6 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
             for vr in rag_response:
                 prompt += f"\n{vr.text or ''}"
 
-    log.debug(f"Prompt: {prompt}")
     # Prompt > System Message
     messages = [SystemMessage(prompt)]
     
@@ -121,9 +121,9 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
         else:
             response += delta    
     
-        # if delta.content:
-        #     # Shield the content from the response
-        #     yield StreamContentChunk(content=delta.content, is_partial=True)
+        if delta.content:
+            # Shield the content from the response
+            yield StreamContentChunk(content=delta.content, is_partial=True)
     
     # Append the final response
     messages.append(response)
@@ -167,9 +167,9 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
 
             # Process response
             response = llm_with_tools.invoke(messages)
-        else:
-            yield StreamContentChunk(content=response.content, is_partial=True)
-            break
+        # else:
+        #     yield StreamContentChunk(content=response.content, is_partial=True)
+        #     break
         
 
 
