@@ -30,7 +30,7 @@ from cel.gateway.model.message import Message
 from cel.connectors.telegram.model.telegram_lead import TelegramLead
 from cel.gateway.model.message_gateway_context import MessageGatewayContext
 from cel.gateway.model.outgoing import OutgoingMessage
-
+from services.salesforce import createProspect
 
 
 
@@ -44,6 +44,7 @@ class VAPIConnector(BaseConnector):
         self.prefix = '/vapi'
         self.router = APIRouter(prefix=self.prefix)
         self.paused = False
+        self.function_handlers = {}  # Function handlers dictionary
         # generate shortuuid for security token
         self.__create_routes(self.router)
     
@@ -65,8 +66,44 @@ class VAPIConnector(BaseConnector):
             else:
                 #  TODO:
                 raise NotImplementedError("Non-streaming response is not implemented yet")
-        
 
+        @router.post("/chat/test")
+        async def create_prospect(request: Request):
+            print("createProspect")
+            # data = await request.json()
+
+
+            # Usas el servicio de salesforce para crear un prospecto
+            # create_prospect(data)
+
+            return Response(status_code=200)
+
+        @router.post(f"{self.prefix}/functions")
+        async def handle_function_call(request: Request):
+            request_data = await request.json()
+            function_name = request_data.get('function_name')
+            function_args = request_data.get('function_args', {})
+
+            if not function_name:
+                return JSONResponse(content={"error": "Function name is required"}, status_code=400)
+
+            try:
+                response = await self.call_function(function_name, function_args)
+                return JSONResponse(content=response)
+            except Exception as e:
+                log.error(f"Error processing function call: {e}")
+                return JSONResponse(content={"error": str(e)}, status_code=500)
+        
+    async def call_function(self, function_name, function_args):
+        if function_name in self.function_handlers:
+            return await self.function_handlers[function_name](**function_args)
+        raise NotImplementedError(f"Function '{function_name}' is not implemented")
+
+    def register_function(self, name):
+        def decorator(func):
+            self.function_handlers[name] = func
+            return func
+        return decorator
             
     async def __process_stream(self, payload: dict):
         try:
@@ -113,7 +150,7 @@ class VAPIConnector(BaseConnector):
 
         
     async def send_typing_action(self, lead: TelegramLead):
-        log.warning("send_typing_action must be implemented in VAPI connector")
+        pass
         
         
         

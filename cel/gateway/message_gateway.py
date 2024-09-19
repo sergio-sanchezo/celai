@@ -1,7 +1,9 @@
 import asyncio
 from typing import Callable
 from loguru import logger as log
+
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger as log
 
 from cel.assistants.stream_content_chunk import StreamContentChunk
@@ -154,6 +156,7 @@ class MessageGateway:
         
         
         self.app.include_router(health_router)
+
         self.app.include_router(self.base_routes())
         self.assistant: BaseAssistant = assistant
         self.delivery_rate_control = delivery_rate_control
@@ -218,15 +221,23 @@ class MessageGateway:
         try:
             for middleware in self.middlewares:
                 res = await middleware(message, message.lead.connector, self.assistant)
+
+                # Check if the middleware returned a tuple or just a boolean
+                if isinstance(res, tuple):
+                    status, custom_message = res
+                else:
+                    status, custom_message = res, None
+
                 # Break the chain if any middleware returns False
-                if not res:
-                    log.error(f"Middleware {type(middleware)} rejected message: {message.text}")
-                    return False
-            return True
+                if not status:
+                    log.error(f"Middleware rejected message: {message.text}")
+                    return False, custom_message
+
+            return True, None  # All middlewares passed, no custom message
         except Exception as e:
             log.error(f"Error processing middlewares: {e}")
-            return False
-        
+            return False, None  # Error in middleware processing, no custom message
+            
     async def __process_events(self, message: Message):
         try:
             connector = message.lead.connector
@@ -319,13 +330,17 @@ class MessageGateway:
         #                 StreamMode.FULL, 
         #                 StreamMode.DIRECT], "Invalid StreamMode"
         
-        
         log.warning(f"Handling message: {message}")
         connector = message.lead.connector
         lead = message.lead
         
-        if not await self.__process_middlewares(message):
+        status, custom_message = await self.__process_middlewares(message)
+
+        if not status:
             log.warning(f"Message {message.lead.get_session_id()} rejected by middlewares")
+            if custom_message:
+                rejection_chunk = StreamContentChunk(content=custom_message, is_partial=False)
+                yield rejection_chunk
             return
         
         if not await self.__process_client_command(message):
@@ -339,6 +354,7 @@ class MessageGateway:
         if self.assistant:
             stream = self.assistant.new_message(message.lead, message.text, {})
             content = ''
+            # print("*"*30, "")
             
             if mode == StreamMode.SENTENCE:
                 async for sentence in streaming_sentence_detector_async(stream): 
@@ -368,7 +384,6 @@ class MessageGateway:
                     
                     if capture_repsonse:
                         yield chunk
-                        # pass
                     else:
                         await self.dispatch_outgoing_genai_message(message.lead, text=chunk.content, is_partial=chunk.is_partial)
                         await connector.send_typing_action(message.lead)
@@ -380,7 +395,7 @@ class MessageGateway:
                     assert isinstance(chunk, StreamContentChunk), "stream must be a StreamChunk"
                     content += chunk.content
                     
-                    if capture_repsonse:
+                    if not capture_repsonse:
                         yield chunk.content
                         # pass
                     else:
@@ -388,7 +403,7 @@ class MessageGateway:
                 
                 
                 
-            log.debug(f"Assistant response: {content}")
+            log.debug(f"Assistant response: {content}" + "subcero")
         else: 
             log.critical("No assistant available")
             if capture_repsonse:
