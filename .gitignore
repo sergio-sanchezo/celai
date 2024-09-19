@@ -165,3 +165,5 @@ test.py
 
 .examples/
 DEV.md
+.webui_*
+qrcode.png
