@@ -169,3 +169,4 @@ class AtlasStore(VectorStore):
     def delete(self, id):
         """Delete a vector from the store by its ID"""
         self.collection.delete_one({'_id': id})
+

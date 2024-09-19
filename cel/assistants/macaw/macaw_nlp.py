@@ -93,7 +93,7 @@ async def process_new_message(ctx: MacawNlpInferenceContext, message: str, on_fu
             for vr in rag_response:
                 prompt += f"\n{vr.text or ''}"
 
-    
+    log.debug(f"Prompt: {prompt}")
     # Prompt > System Message
     messages = [SystemMessage(prompt)]
     

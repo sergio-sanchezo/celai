@@ -48,7 +48,7 @@ def fetch_all_account_fields():
     field_names = [field['name'] for field in account_description['fields']]
     
     # Create the SOQL query dynamically to get the last 5 created records
-    query = f"SELECT {', '.join(field_names)} FROM Account ORDER BY CreatedDate DESC LIMIT 5"
+    query = f"SELECT {', '.join(field_names)} FROM Account  LIMIT 5"
     
     # Execute the query
     result = sf.query(query)
@@ -63,6 +63,6 @@ if __name__ == "__main__":
     # with open('account_fields_all.json', 'w') as f:
     #     json.dump(result, f, indent=4)
 
-    result = getUserByPhone("+56352280777")
+    result = getUserByPhone("+56352280778")
     print(result if result else "Not found")
 

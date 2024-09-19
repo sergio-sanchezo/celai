@@ -15,7 +15,7 @@ from cel.rag.providers.markdown_rag import MarkdownRAG
 from cel.connectors.vapi.vapi_connector import VAPIConnector
 from cel.middlewares import SessionMiddleware, RedisBlackListVapiMiddleware
 from cel.gateway.request_context import RequestContext
-from services.salesforce import getUserByPhone, getUserByRUT
+from services.salesforce import getUserByPhone, getUserByRUT, createProspect
 from cel.assistants.common import Param
 from cel.assistants.function_context import FunctionContext
 import json
@@ -70,6 +70,23 @@ if __name__ == "__main__":
             else:
                 return FunctionContext.response_text("No se encontró información para el RUT proporcionado", request_mode=RequestMode.SINGLE)
 
+    @ast.function("crearProspecto", "El cliente proporciona su información para crear un prospecto", [
+        Param(name="first_name", type="string", description="Nombre del cliente", required=True),
+        Param(name="last_name", type="string", description="Apellido del cliente", required=True),
+        Param(name="company", type="string", description="Empresa del cliente", required=True),
+        Param(name="rut", type="string", description="RUT del cliente", required=True),
+        Param(name="phone", type="string", description="Teléfono del cliente", required=True),
+        Param(name="email", type="string", description="Email del cliente, debe ser un formato válido", required=True),
+        Param(name="comment", type="string", description="Resumen del producto o servicio sobre el cual se está interesado", required=True)
+    ])
+    async def handle_crear_prospecto(session, params, ctx: FunctionContext):
+        log.critical(f"Got crearProspecto call with params: {params}")
+
+        result = createProspect(params)
+        if result:
+            return FunctionContext.response_text(f"Prospecto creado con éxito", request_mode=RequestMode.SINGLE)
+        else:
+            return FunctionContext.response_text("Error al crear el prospecto", request_mode=RequestMode.SINGLE)
 
     gateway = MessageGateway(
         webhook_url=os.environ.get("WEBHOOK_URL"),
@@ -82,7 +99,7 @@ if __name__ == "__main__":
     conn = VAPIConnector()
 
     # Register the middlewares with the gateway
-    gateway.register_middleware(blacklist)
+    # gateway.register_middleware(blacklist)
 
     # Register the connector with the gateway
     gateway.register_connector(conn)

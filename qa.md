@@ -30,6 +30,8 @@ Netline espera tener un impacto significativo al cambiar la experiencia de servi
 La visión de Netline se alinea con sus valores al buscar superar las expectativas del cliente mediante un compromiso auténtico, empatía en la atención y ofreciendo soluciones simples y efectivas.
 ## ¿Qué servicios ofrece Netline?**
 Netline ofrece servicios de Acceso a Internet Fijo Inalámbrico, Telefonía IP, IoT Industrial y SMS Mayorista.
+## ¿Qué productos/servicios ofrece Netline?**
+Netline ofrece productos como NetAir, NetZero, NetDC, NetDC Zero, NetSat, NetVoip, NetCallCenter, NetIOT MS, Red 400 IoT Industrial (IIoT) y SMS Mayorista.
 ## ¿Como se llaman los productos de Netline?**
 -	NetAir: Servicio de Acceso a Internet Fijo Inalámbrico de alta capacidad, ideal para zonas de difícil acceso.
 -	NetZero: Conexión inalámbrica fija de alta capacidad como respaldo, a un costo menor que la fibra óptica
