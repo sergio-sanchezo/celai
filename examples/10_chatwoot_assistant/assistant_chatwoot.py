@@ -11,22 +11,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-# REMOVE THIS BLOCK IF YOU ARE USING THIS SCRIPT AS A TEMPLATE
-# -------------------------------------------------------------
-# import sys
-# from pathlib import Path
-# # Add parent directory to path
-# path = Path(os.path.dirname(os.path.abspath(__file__)))
-# sys.path.append(str(path.parents[1]))
-# -------------------------------------------------------------
-
 # Import Cel.ai modules
 from cel.gateway.message_gateway import MessageGateway
 from cel.assistants.macaw.macaw_assistant import MacawAssistant
 from cel.prompt.prompt_template import PromptTemplate
 from cel.rag.providers.markdown_rag import MarkdownRAG
-from cel.connectors.web.web_connector import WebConnector
+from cel.connectors.chatwoot.chatwoot_connector import ChatwootConnector
 from cel.assistants.macaw.macaw_settings import MacawSettings
 from cel.assistants.common import Param
 from cel.assistants.function_context import FunctionContext
@@ -40,7 +30,7 @@ log.add(sys.stdout, format="<level>{level: <8}</level> | "
 
 # Setup prompt
 # Read from the file prompt.txt
-prompt = "Eres Betty, un asistente especializado en ventas de ropa para la marca EchoModa"
+prompt = "Eres un asistente que resuelve consultas de manera concisa"
 
 # Create the prompt template
 prompt_template = PromptTemplate(prompt)
@@ -61,16 +51,7 @@ ast = MacawAssistant(
 # Configure the RAG model using the MarkdownRAG provider
 # by default it uses the CachedOpenAIEmbedding for text2vec
 # and ChromaStore for storing the vectors
-# mdm = MarkdownRAG("demo", file_path="qa.md", split_table_rows=True)
-# # Load from the markdown file, then slice the content, and store it.
-# mdm.load()
-# # Register the RAG model with the assistant
-# ast.set_rag_retrieval(mdm)
-path = "C:/Users/ASUS/Desktop/WorkSito/SunDevs/web_connector/celai/examples/9_web/faqnetlineone.md"
-mdm = MarkdownRAG("demoWebCel", file_path=path)
-mdm.load()
 
-ast.set_rag_retrieval(mdm)
 
 # Create the Message Gateway - This component is the core of the assistant
 # It handles the communication between the assistant and the connectors
@@ -83,7 +64,7 @@ gateway = MessageGateway(
 
 # VoIP Connector
 
-conn = WebConnector(web_url="https://4cfd-152-201-84-71.ngrok-free.app/messages", stream_mode=StreamMode.DIRECT)
+conn = ChatwootConnector(web_url="https://6035-152-201-84-71.ngrok-free.app/messages", stream_mode=StreamMode.SENTENCE, endpoint_prefix='/ola')
 
 # Register the connector with the gateway
 gateway.register_connector(conn)

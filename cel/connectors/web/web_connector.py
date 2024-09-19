@@ -85,7 +85,6 @@ class WebConnector(BaseConnector):
             - metadata [dict]: Metadatos del mensaje
             - is_partial [bool]: Indica si el mensaje es parcial
         """
-        print("Are kidding me?")
         async with httpx.AsyncClient() as client:
             try:
                 data = {
@@ -93,9 +92,9 @@ class WebConnector(BaseConnector):
                     "role": "assistant",
                     "content": text
                 }
-                print(self.web_url)
+                # print("el mensaje es el siguiente:" + text)
                 response = await client.post(
-                    f"{self.web_url}messages",
+                    f"{self.web_url}",
                     json=data
                 )
                 log.debug(f"response for the front: {response.status_code}")
