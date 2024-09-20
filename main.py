@@ -17,6 +17,7 @@ from cel.middlewares import SessionMiddleware, RedisBlackListVapiMiddleware
 from cel.gateway.request_context import RequestContext
 from services.salesforce import getUserByPhone, getUserByRUT, createProspect
 from cel.assistants.common import Param
+from cel.assistants.macaw.macaw_settings import MacawSettings
 from cel.assistants.function_context import FunctionContext
 import json
 
@@ -39,10 +40,17 @@ if __name__ == "__main__":
         result = json.dumps(result)
         return result if result else "Pendiente de información"
 
+    agent_settings = MacawSettings(
+        core_model='gpt-4o-mini',
+    )
 
-    ast = MacawAssistant(prompt=prompt_template, state={
+    ast = MacawAssistant(
+        prompt=prompt_template, 
+        state={
         "customer_data": get_customer_info
-    })
+        },
+        settings=agent_settings
+    )
 
 
     mdm = MarkdownRAG("demo", file_path="qa.md", split_table_rows=True, encoding="utf-8")
@@ -57,7 +65,7 @@ if __name__ == "__main__":
     async def handle_message(session, ctx: RequestContext):
         log.critical(f"Got message event with message!")
         print(session)
-
+        print(await ctx.state.get_store(session))
 
     @ast.function("buscarPorRut", "El cliente proporciona su RUT para buscar su información", [
         Param(name="RUT", type="string", description="El RUT del cliente por ej 12345678", required=True)
@@ -71,7 +79,7 @@ if __name__ == "__main__":
             result = getUserByRUT(rut)
 
             if result:
-                ctx.state.update({"customer_data": json.dumps})
+                await ctx.state.set_key_value(session, "customer_data", json.dumps(result))
                 return FunctionContext.response_text(f"La información del cliente es: {json.dumps(result)}", request_mode=RequestMode.SINGLE)
             else:
                 return FunctionContext.response_text("No se encontró información para el RUT proporcionado", request_mode=RequestMode.SINGLE)
