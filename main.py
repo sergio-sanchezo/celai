@@ -61,12 +61,6 @@ if __name__ == "__main__":
     # Register the RAG model with the assistant
     ast.set_rag_retrieval(mdm)
 
-    @ast.event('message')
-    async def handle_message(session, ctx: RequestContext):
-        log.critical(f"Got message event with message!")
-        print(session)
-        print(await ctx.state.get_store(session))
-
     @ast.function("buscarPorRut", "El cliente proporciona su RUT para buscar su información", [
         Param(name="RUT", type="string", description="El RUT del cliente por ej 12345678", required=True)
     ])
@@ -76,13 +70,38 @@ if __name__ == "__main__":
         if not rut:
             return FunctionContext.response_text("No se proporcionó un RUT", request_mode=RequestMode.SINGLE)
         else:
-            result = getUserByRUT(rut)
-
-            if result:
-                await ctx.state.set_key_value(session, "customer_data", json.dumps(result))
-                return FunctionContext.response_text(f"La información del cliente es: {json.dumps(result)}", request_mode=RequestMode.SINGLE)
+            attempts = 0
+            max_attempts = 3
+            result = None
+            error_occurred = False
+            
+            while attempts < max_attempts:
+                try:
+                    result = getUserByRUT(rut)
+                    if result:
+                        await ctx.state.set_key_value(session, "customer_data", json.dumps(result))
+                        return FunctionContext.response_text(f"La información del cliente es: {json.dumps(result)}", request_mode=RequestMode.SINGLE)
+                    else:
+                        # No result found but no error occurred
+                        break
+                except Exception as e:
+                    log.error(f"Attempt {attempts + 1} failed with error: {str(e)}")
+                    attempts += 1
+                    error_occurred = True
+            
+            if error_occurred:
+                return FunctionContext.response_text(
+                    "Lamentablemente hemos tenido un inconveniente técnico intentando identificar la cuenta por RUT, "
+                    "por lo que lamentablemente no lo puedo asistir con la consulta. "
+                    "¿Desea que te derive con un asesor comercial o técnico?",
+                    request_mode=RequestMode.SINGLE
+                )
             else:
-                return FunctionContext.response_text("No se encontró información para el RUT proporcionado", request_mode=RequestMode.SINGLE)
+                return FunctionContext.response_text(
+                    "No se encontró información para el RUT proporcionado. "
+                    "¿Desea que te derive con un asesor comercial o técnico?",
+                    request_mode=RequestMode.SINGLE
+                )
 
     @ast.function("crearProspecto", "El cliente proporciona su información para crear un prospecto", [
         Param(name="first_name", type="string", description="Nombre del cliente", required=True),
@@ -96,15 +115,38 @@ if __name__ == "__main__":
     async def handle_crear_prospecto(session, params, ctx: FunctionContext):
         log.critical(f"Got crearProspecto call with params: {params}")
 
-        # result = createProspect(params)
-        if True:
-            return FunctionContext.response_text(f"Prospecto creado con éxito", request_mode=RequestMode.SINGLE)
-        else:
-            return FunctionContext.response_text("Error al crear el prospecto", request_mode=RequestMode.SINGLE)
+        attempts = 0
+        max_attempts = 3
+        result = None
+        error_occurred = False
 
-    @ast.function("obtener_clima", "El cliente solicita información del clima", [])
-    async def handle_obtener_clima(session, params, ctx: FunctionContext):
-        return FunctionContext.response_text("El clima es soleado", request_mode=RequestMode.SINGLE)
+        while attempts < max_attempts:
+            try:
+                result = createProspect(params)
+                if result:
+                    return FunctionContext.response_text(f"Prospecto creado con éxito", request_mode=RequestMode.SINGLE)
+                else:
+                    # Si el resultado es vacío, significa que la creación del prospecto falló, no tiene sentido reintentar.
+                    break
+            except Exception as e:
+                log.error(f"Attempt {attempts + 1} to create prospect failed with error: {str(e)}")
+                attempts += 1
+                error_occurred = True
+
+        if error_occurred:
+            return FunctionContext.response_text(
+                "Lamentablemente hemos tenido un inconveniente técnico al intentar crear el prospecto. "
+                "Por lo tanto, no puedo completar la solicitud en este momento. "
+                "¿Desea que te derive con un asesor comercial o técnico?",
+                request_mode=RequestMode.SINGLE
+            )
+        else:
+            return FunctionContext.response_text(
+                "No se pudo crear el prospecto con la información proporcionada. "
+                "¿Desea que te derive con un asesor comercial o técnico?",
+                request_mode=RequestMode.SINGLE
+            )
+
 
     gateway = MessageGateway(
         webhook_url=os.environ.get("WEBHOOK_URL"),

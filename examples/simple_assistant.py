@@ -38,19 +38,19 @@ if __name__ == "__main__":
     # Register blacklist middleware
     blacklist = InMemBlackListMiddleware()
     auth = SessionMiddleware()
-    stt = DeepgramSTTMiddleware()
+    # stt = DeepgramSTTMiddleware()
     geodecoding = GeodecodingMiddleware()
     
-    insight_targets = {
-        "last_conversation_topic": "Last conversation topic",
-        "marital_status": "Marital status: single, married, divorced, widowed",
-        "age": "Age: 0-120",
-        "childrens": "Number of children: 0-10",
-        "income": "Income: 0-1000000",
-        "location": "Location: city, country",
-        "job": "Job: occupation",
-        "hobbies": "Hobbies: list of hobbies",
-    }
+    # insight_targets = {
+    #     "last_conversation_topic": "Last conversation topic",
+    #     "marital_status": "Marital status: single, married, divorced, widowed",
+    #     "age": "Age: 0-120",
+    #     "childrens": "Number of children: 0-10",
+    #     "income": "Income: 0-1000000",
+    #     "location": "Location: city, country",
+    #     "job": "Job: occupation",
+    #     "hobbies": "Hobbies: list of hobbies",
+    # }
     
     prompt = """You are a banking assistant. Called {assistant_name}. You can help a user to send money.
     The customer name is {customer_name}.
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     
     ast = MacawAssistant(
         prompt=prompt_template, 
-        insight_targets=insight_targets,
+        # insight_targets=insight_targets,
         state={
             "assistant_name": "Celia",
             "customer_name": get_customer_name
@@ -113,9 +113,9 @@ if __name__ == "__main__":
         price = prices.get(params.get("asset", "BTC"), 0)
         return FunctionContext.response_text(f"The price of {asset} is {price}", request_mode=RequestMode.SINGLE)
     
-    @ast.event('insights')
-    async def handle_insight(session, ctx: RequestContext, data: dict):
-        log.warning(f"Got insights event with data: {data}")
+    # @ast.event('insights')
+    # async def handle_insight(session, ctx: RequestContext, data: dict):
+    #     log.warning(f"Got insights event with data: {data}")
     
     
     @ast.event('message')
@@ -196,13 +196,13 @@ if __name__ == "__main__":
     gateway = MessageGateway(
         webhook_url=os.environ.get("WEBHOOK_URL"),
         assistant=ast,
-        host="127.0.0.1", port=5004,
+        host="127.0.0.1", port=3000,
         message_enhancer=SmartMessageEnhancerOpenAI()
     )
     
-    gateway.register_middleware(auth)
-    gateway.register_middleware(stt)
-    gateway.register_middleware(geodecoding)
+    # gateway.register_middleware(auth)
+    # gateway.register_middleware(stt)
+    # gateway.register_middleware(geodecoding)
     # gateway.register_middleware(blacklist)
     
     conn = TelegramConnector(token=os.environ.get("TELEGRAM_TOKEN"), 
@@ -210,11 +210,11 @@ if __name__ == "__main__":
     gateway.register_connector(conn)
     
     
-    conn2 = WhatsappConnector(token=os.getenv("WHATSAPP_TOKEN"), 
-                        phone_number_id=os.getenv("WHATSAPP_PHONE_NUMBER_ID"),
-                        verify_token="123456",
-                        endpoint_prefix="/whatsapp",
-                        stream_mode=StreamMode.FULL)
-    gateway.register_connector(conn2)
+    # conn2 = WhatsappConnector(token=os.getenv("WHATSAPP_TOKEN"), 
+    #                     phone_number_id=os.getenv("WHATSAPP_PHONE_NUMBER_ID"),
+    #                     verify_token="123456",
+    #                     endpoint_prefix="/whatsapp",
+    #                     stream_mode=StreamMode.FULL)
+    # gateway.register_connector(conn2)
     
     gateway.run()

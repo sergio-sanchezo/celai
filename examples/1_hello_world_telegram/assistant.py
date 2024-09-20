@@ -67,7 +67,7 @@ ast = MacawAssistant(
 gateway = MessageGateway(
     webhook_url=os.environ.get("WEBHOOK_URL"),
     assistant=ast,
-    host="127.0.0.1", port=5004,
+    host="127.0.0.1", port=3000,
     message_enhancer=SmartMessageEnhancerOpenAI(),
     
     # Activate the delivery rate control to prevent 
@@ -81,7 +81,7 @@ conn = TelegramConnector(
     token=os.environ.get("TELEGRAM_TOKEN"), 
     # Try to set the stream mode to SENTENCE for a more natural conversation
     # SENTENCE mode will send the message to the user every time a sentence is completed
-    stream_mode=StreamMode.FULL
+    stream_mode=StreamMode.DIRECT
 )
 
 
