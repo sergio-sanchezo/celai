@@ -99,7 +99,7 @@ if __name__ == "__main__":
     conn = VAPIConnector()
 
     # Register the middlewares with the gateway
-    # gateway.register_middleware(blacklist)
+    gateway.register_middleware(blacklist)
 
     # Register the connector with the gateway
     gateway.register_connector(conn)
