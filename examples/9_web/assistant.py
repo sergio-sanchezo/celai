@@ -2,24 +2,28 @@
 import os
 import sys
 
-# Add the way for use to find the file in the route that I need to use in the prompt
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # from loguru import logger as log
 # Load .env variables
 from dotenv import load_dotenv
 
-load_dotenv()
+# Cargar el archivo .env correcto según el entorno
+env = os.getenv('ENV', 'development')  # Por defecto, usa 'development'
 
+if env == 'production':
+    load_dotenv('.env.production')
+else:
+    load_dotenv('.env.development')
 
 # REMOVE THIS BLOCK IF YOU ARE USING THIS SCRIPT AS A TEMPLATE
 # -------------------------------------------------------------
-# import sys
-# from pathlib import Path
-# # Add parent directory to path
-# path = Path(os.path.dirname(os.path.abspath(__file__)))
-# sys.path.append(str(path.parents[1]))
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+path = Path(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(str(path.parents[1]))
 # -------------------------------------------------------------
+
 
 # Import Cel.ai modules
 from cel.gateway.message_gateway import MessageGateway
@@ -40,7 +44,33 @@ log.add(sys.stdout, format="<level>{level: <8}</level> | "
 
 # Setup prompt
 # Read from the file prompt.txt
-prompt = "Eres Betty, un asistente especializado en ventas de ropa para la marca EchoModa"
+prompt = """
+[Identity]
+Eres Netia, un asistente responsable de proveer información sobre productos y servicios que los ayude empleados de la empresa Netline en actividades como armados de propuestas, emails, etc. 
+
+[Style]
+- Sé formal, claro y conciso.
+- Mantén un tono respetuoso y profesional.
+- Alinea los mensajes con la misión de Netline de ofrecer soluciones simples y efectivas.
+
+[Response Guideline]
+- Utiliza saludos y cierres formales.
+- Si es apropiado, destaca el soporte 24/7 y los servicios de instalación rápida que ofrece Netline.
+- Redacción de correos
+- Para correos electronicos resume el propósito del correo en las primeras dos oraciones.
+- Redacción de descripciones de productos y servicios
+- Q&A de productos y servicios que ofrece la compañia
+- Ayudar a armar ideas o generar propuestas comerciales
+- Asegúrate de que los asuntos de los correos electrónicos sean claros, descriptivos y relacionados directamente con los servicios de Netline (tal como del Proceso de instalación de NetAir y otros servicios).
+
+[Tasks]
+
+1.  Saluda al destinatario según su rol.
+2.  Verifica el motivo de la consulta.
+3.  Proporciona los detalles o instrucciones necesarias, asegurándote de que sean simples y alineados con los valores de Netline.
+4.	Ofrece los siguientes pasos o un llamado a la acción, como confirmar una cita para el servicio o revisar la documentación adjunta.
+
+"""
 
 # Create the prompt template
 prompt_template = PromptTemplate(prompt)
@@ -61,16 +91,12 @@ ast = MacawAssistant(
 # Configure the RAG model using the MarkdownRAG provider
 # by default it uses the CachedOpenAIEmbedding for text2vec
 # and ChromaStore for storing the vectors
-# mdm = MarkdownRAG("demo", file_path="qa.md", split_table_rows=True)
-# # Load from the markdown file, then slice the content, and store it.
-# mdm.load()
-# # Register the RAG model with the assistant
-# ast.set_rag_retrieval(mdm)
-path = "C:/Users/ASUS/Desktop/WorkSito/SunDevs/web_connector/celai/examples/9_web/faqnetlineone.md"
-mdm = MarkdownRAG("demoWebCel", file_path=path)
+mdm = MarkdownRAG("demo", file_path="examples/9_web/qa.md", encoding="utf-8")
+# Load from the markdown file, then slice the content, and store it.
 mdm.load()
-
+# Register the RAG model with the assistant
 ast.set_rag_retrieval(mdm)
+
 
 # Create the Message Gateway - This component is the core of the assistant
 # It handles the communication between the assistant and the connectors
@@ -78,12 +104,12 @@ gateway = MessageGateway(
     webhook_url=os.environ.get("WEBHOOK_URL"),
     assistant=ast,
     host="0.0.0.0",
-    port=5000,
+    port=3000,
 )
 
 # VoIP Connector
 
-conn = WebConnector(web_url="https://4cfd-152-201-84-71.ngrok-free.app/messages", stream_mode=StreamMode.DIRECT)
+conn = WebConnector(web_url="http://localhost:3001/messages", stream_mode=StreamMode.DIRECT)
 
 # Register the connector with the gateway
 gateway.register_connector(conn)
