@@ -403,7 +403,7 @@ class MessageGateway:
                 
                 
                 
-            log.debug(f"Assistant response: {content}" + "subcero")
+            log.debug(f"Assistant response: {content}")
         else: 
             log.critical("No assistant available")
             if capture_repsonse:

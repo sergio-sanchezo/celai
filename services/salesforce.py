@@ -4,7 +4,7 @@ from simple_salesforce import Salesforce
 # Read credentials from environment variables
 sf = Salesforce(
     username=os.getenv("SF_USERNAME"),
-    password=os.getenv("SF_PASSWORD"),
+    password=os.getenv("SF_PASSWORD") + os.getenv("SF_SECURITY_TOKEN"),
     consumer_key=os.getenv("SF_CONSUMER_KEY"),
     consumer_secret=os.getenv("SF_CONSUMER_SECRET"),
     domain="test"

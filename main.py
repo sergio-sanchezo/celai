@@ -53,6 +53,12 @@ if __name__ == "__main__":
     # Register the RAG model with the assistant
     ast.set_rag_retrieval(mdm)
 
+    @ast.event('message')
+    async def handle_message(session, ctx: RequestContext):
+        log.critical(f"Got message event with message!")
+        print(session)
+
+
     @ast.function("buscarPorRut", "El cliente proporciona su RUT para buscar su información", [
         Param(name="RUT", type="string", description="El RUT del cliente por ej 12345678", required=True)
     ])
@@ -82,11 +88,15 @@ if __name__ == "__main__":
     async def handle_crear_prospecto(session, params, ctx: FunctionContext):
         log.critical(f"Got crearProspecto call with params: {params}")
 
-        result = createProspect(params)
-        if result:
+        # result = createProspect(params)
+        if True:
             return FunctionContext.response_text(f"Prospecto creado con éxito", request_mode=RequestMode.SINGLE)
         else:
             return FunctionContext.response_text("Error al crear el prospecto", request_mode=RequestMode.SINGLE)
+
+    @ast.function("obtener_clima", "El cliente solicita información del clima", [])
+    async def handle_obtener_clima(session, params, ctx: FunctionContext):
+        return FunctionContext.response_text("El clima es soleado", request_mode=RequestMode.SINGLE)
 
     gateway = MessageGateway(
         webhook_url=os.environ.get("WEBHOOK_URL"),
