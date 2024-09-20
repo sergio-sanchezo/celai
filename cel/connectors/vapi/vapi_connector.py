@@ -30,7 +30,7 @@ from cel.gateway.model.message import Message
 from cel.connectors.telegram.model.telegram_lead import TelegramLead
 from cel.gateway.model.message_gateway_context import MessageGatewayContext
 from cel.gateway.model.outgoing import OutgoingMessage
-from services.salesforce import createProspect, createProspectCampaign
+from services.salesforce import SalesforceService
 from fastapi.responses import JSONResponse
 
 
@@ -41,12 +41,13 @@ class VAPIConnector(BaseConnector):
     
     endpoint = '/chat/completions'
        
-    def __init__(self):
+    def __init__(self, salesforce_service: SalesforceService):
         log.debug("Creating VAPI connector")
         self.prefix = '/vapi'
         self.router = APIRouter(prefix=self.prefix)
         self.paused = False
         self.function_handlers = {}  # Function handlers dictionary
+        self.salesforce_service = salesforce_service
         # generate shortuuid for security token
         self.__create_routes(self.router)
     
@@ -68,24 +69,13 @@ class VAPIConnector(BaseConnector):
             else:
                 #  TODO:
                 raise NotImplementedError("Non-streaming response is not implemented yet")
-
-        @router.post("/chat/test")
-        async def create_prospect(request: Request):
-            print("createProspect")
-            # data = await request.json()
-
-
-            # Usas el servicio de salesforce para crear un prospecto
-            # create_prospect(data)
-
-            return Response(status_code=200)
         
         @router.post("/createProspect")
         async def create_prospect(request: Request):
             try:
                 data = await request.json()
                 print("Received data:", json.dumps(data, indent=4))
-                createProspectCampaign(data)
+                salesforce_service.createProspectCampaign(data)
                 return Response(content=json.dumps({"status": "success", "data": data}), status_code=200)
             except Exception as e:
                 log.error(f"Error al crear prospecto: {str(e)}")

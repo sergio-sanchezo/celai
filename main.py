@@ -1,11 +1,17 @@
 # LOAD ENV VARIABLES
 import os
-from loguru import logger as log
-# Load .env variables
 from dotenv import load_dotenv
-load_dotenv()
+from loguru import logger as log
 
-# Import Cel.ai modules
+# Cargar el archivo .env correcto según el entorno
+env = os.getenv('ENV', 'development')  # Por defecto, usa 'development'
+
+if env == 'production':
+    load_dotenv('.env.production')
+else:
+    load_dotenv('.env.development')
+
+# Importar módulos de Cel.ai
 from cel.gateway.model.conversation_lead import ConversationLead
 from cel.gateway.message_gateway import MessageGateway
 from cel.assistants.macaw.macaw_assistant import MacawAssistant
@@ -15,28 +21,41 @@ from cel.rag.providers.markdown_rag import MarkdownRAG
 from cel.connectors.vapi.vapi_connector import VAPIConnector
 from cel.middlewares import SessionMiddleware, RedisBlackListVapiMiddleware
 from cel.gateway.request_context import RequestContext
-from services.salesforce import getUserByPhone, getUserByRUT, createProspect
+
+# Importar el servicio de Salesforce
+from services.salesforce import SalesforceService
+
 from cel.assistants.common import Param
 from cel.assistants.macaw.macaw_settings import MacawSettings
 from cel.assistants.function_context import FunctionContext
 import json
 
 
+
 if __name__ == "__main__":
 
-    # Register middlwares
+    # Instancia del servicio de Salesforce con parámetros del entorno
+    sf_service = SalesforceService(
+        username=os.getenv("SF_USERNAME"),
+        password=os.getenv("SF_PASSWORD"),
+        security_token=os.getenv("SF_SECURITY_TOKEN"),
+        consumer_key=os.getenv("SF_CONSUMER_KEY"),
+        consumer_secret=os.getenv("SF_CONSUMER_SECRET"),
+        domain="test" if env == "development" else "login"  # Cambia a "login" en producción si es necesario
+    )
+
+    # Registrar middlewares
     auth = SessionMiddleware()
     blacklist = RedisBlackListVapiMiddleware(redis="redis://localhost:6379/0")
 
-    # Setup prompt from prompt.txt file
+    # Configurar el prompt desde el archivo prompt.txt
     prompt = open("prompt.txt", "r", encoding="utf-8").read()
-        
     prompt_template = PromptTemplate(prompt)
 
     async def get_customer_info(lead: ConversationLead):
         customer_phone = lead.to_dict().get("call_object", {}).get("customer", {}).get("number", "+56352280778")
-        result = getUserByPhone(customer_phone)
-        # transform to string
+        result = sf_service.get_user_by_phone(customer_phone)
+        # transformar a string
         result = json.dumps(result)
         return result if result else "Pendiente de información"
 
@@ -52,13 +71,12 @@ if __name__ == "__main__":
         settings=agent_settings
     )
 
-
     mdm = MarkdownRAG("demo", file_path="qa.md", split_table_rows=True, encoding="utf-8")
 
-    # Load from the markdown file, then slice the content, and store it.
+    # Cargar desde el archivo markdown, luego dividir el contenido y almacenarlo.
     mdm.load()
 
-    # Register the RAG model with the assistant
+    # Registrar el modelo RAG con el asistente
     ast.set_rag_retrieval(mdm)
 
     @ast.function("buscarPorRut", "El cliente proporciona su RUT para buscar su información", [
@@ -77,7 +95,7 @@ if __name__ == "__main__":
             
             while attempts < max_attempts:
                 try:
-                    result = getUserByRUT(rut)
+                    result = sf_service.get_user_by_rut(rut)
                     if result:
                         await ctx.state.set_key_value(session, "customer_data", json.dumps(result))
                         return FunctionContext.response_text(f"La información del cliente es: {json.dumps(result)}", request_mode=RequestMode.SINGLE)
@@ -122,7 +140,7 @@ if __name__ == "__main__":
 
         while attempts < max_attempts:
             try:
-                result = createProspect(params)
+                result = sf_service.create_prospect(params)
                 if result:
                     return FunctionContext.response_text(f"Prospecto creado con éxito", request_mode=RequestMode.SINGLE)
                 else:
@@ -147,7 +165,6 @@ if __name__ == "__main__":
                 request_mode=RequestMode.SINGLE
             )
 
-
     gateway = MessageGateway(
         webhook_url=os.environ.get("WEBHOOK_URL"),
         assistant=ast,
@@ -156,14 +173,15 @@ if __name__ == "__main__":
     )
 
     # VoIP Connector
-    conn = VAPIConnector()
+    conn = VAPIConnector(
+        salesforce_service=sf_service,
+    )
 
-    # Register the middlewares with the gateway
+    # Registrar los middlewares con el gateway
     gateway.register_middleware(blacklist)
 
-    # Register the connector with the gateway
+    # Registrar el conector con el gateway
     gateway.register_connector(conn)
 
-    # Then start the gateway and begin processing messages
+    # Iniciar el gateway y comenzar a procesar mensajes
     gateway.run()
-
