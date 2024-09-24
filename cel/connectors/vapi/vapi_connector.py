@@ -75,7 +75,7 @@ class VAPIConnector(BaseConnector):
             try:
                 data = await request.json()
                 print("Received data:", json.dumps(data, indent=4))
-                salesforce_service.createProspectCampaign(data)
+                self.salesforce_service.createProspectCampaign(data)
                 return Response(content=json.dumps({"status": "success", "data": data}), status_code=200)
             except Exception as e:
                 log.error(f"Error al crear prospecto: {str(e)}")
@@ -97,7 +97,8 @@ class VAPIConnector(BaseConnector):
             except Exception as e:
                 log.error(f"Error processing function call: {e}")
                 return JSONResponse(content={"error": str(e)}, status_code=500)
-        
+
+
     async def call_function(self, function_name, function_args):
         if function_name in self.function_handlers:
             return await self.function_handlers[function_name](**function_args)
