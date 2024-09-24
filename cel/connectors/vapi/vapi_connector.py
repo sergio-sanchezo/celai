@@ -75,7 +75,7 @@ class VAPIConnector(BaseConnector):
             try:
                 data = await request.json()
                 print("Received data:", json.dumps(data, indent=4))
-                self.salesforce_service.createProspectCampaign(data)
+                self.salesforce_service.create_prospect_by_campaign(data)
                 return Response(content=json.dumps({"status": "success", "data": data}), status_code=200)
             except Exception as e:
                 log.error(f"Error al crear prospecto: {str(e)}")
