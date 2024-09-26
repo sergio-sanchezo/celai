@@ -35,10 +35,11 @@ class SalesforceService:
             'Phone': data['phone'],
             'Email': data['email'],
             'Consulta_o_comentario__c': data['comment'],
-            'Status': 'No atendido'
+            'Status': 'No atendido',
+            "OwnerId": "00GEk000004qNB7",
+
         }
-        headers = {'Sforce-Auto-Assign': 'TRUE'}
-        return self.sf.Lead.create(prospect_data, headers=headers)
+        return self.sf.Lead.create(prospect_data)
     
     def create_support_case(self, data):
         case_data = {
@@ -46,9 +47,9 @@ class SalesforceService:
             'Description': data.get('Consulta_o_comentario__c', ''),
             'Status': 'Nuevo',
             'Origin': 'Web',
+            "OwnerId": "00GEk000004qNB7"
         }
-        headers = {'Sforce-Auto-Assign': 'TRUE'}
-        return self.sf.Case.create(case_data, headers=headers)
+        return self.sf.Case.create(case_data)
         
     def create_prospect_by_campaign(self, data):
         arguments = data.get("message", {}).get("toolCalls", [])[0].get("function", {}).get("arguments", {})
@@ -68,11 +69,10 @@ class SalesforceService:
                 'Email': arguments.get('Email', ''),
                 'Consulta_o_comentario__c': arguments.get('Consulta_o_comentario__c', ''),
                 'Status': 'No atendido',
+                "OwnerId": "00GEk000004qNB7"
             }
-            headers = {'Sforce-Auto-Assign': 'TRUE'}
-            return self.sf.Lead.create(prospect_data, headers=headers) 
+            return self.sf.Lead.create(prospect_data) 
         
-
     def _process_result(self, result):
         if result['records']:
             record = result['records'][0]
