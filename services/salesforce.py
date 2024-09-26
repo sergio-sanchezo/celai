@@ -35,10 +35,9 @@ class SalesforceService:
             'Phone': data['phone'],
             'Email': data['email'],
             'Consulta_o_comentario__c': data['comment'],
-            'Status': 'No atendido'
+            'Status': 'No atendido',
+            "OwnerId": "00GEk000004qNB7",
         }
-        headers = {'Sforce-Auto-Assign': 'TRUE'}
-        return self.sf.Lead.create(prospect_data, headers=headers)
     
     def create_support_case(self, data):
         case_data = {
@@ -46,13 +45,12 @@ class SalesforceService:
             'Description': data.get('Consulta_o_comentario__c', ''),
             'Status': 'Nuevo',
             'Origin': 'Web',
+            "OwnerId": "00GEk000004qNB7",
         }
-        headers = {'Sforce-Auto-Assign': 'TRUE'}
-        return self.sf.Case.create(case_data, headers=headers)
+        return self.sf.Case.create(case_data)
         
     def create_prospect_by_campaign(self, data):
-        arguments = data.get("message", {}).get("toolCalls", [])[0].get("function", {}).get("arguments", {})
-        phone = arguments.get('Phone', '')  
+        phone = data.get('Phone', '')  
 
         existing_prospect = self.get_prospect_by_phone(phone)
 
@@ -60,17 +58,17 @@ class SalesforceService:
             return self.create_support_case(data)
         else:
             prospect_data = {
-                'FirstName': arguments.get('FirstName', ''),
-                'LastName': arguments.get('LastName', ''),
-                'Company': arguments.get('Company', 'Unknown'),
-                'RUT__c': arguments.get('RUT__c', ''),
+                'FirstName': data.get('FirstName', ''),
+                'LastName': data.get('LastName', ''),
+                'Company': data.get('Company', 'Unknown'),
+                'RUT__c': data.get('RUT__c', ''),
                 'Phone': phone,
-                'Email': arguments.get('Email', ''),
-                'Consulta_o_comentario__c': arguments.get('Consulta_o_comentario__c', ''),
+                'Email': data.get('Email', ''),
+                'Consulta_o_comentario__c': data.get('Consulta_o_comentario__c', ''),
                 'Status': 'No atendido',
+                "OwnerId": "00GEk000004qNB7",
             }
-            headers = {'Sforce-Auto-Assign': 'TRUE'}
-            return self.sf.Lead.create(prospect_data, headers=headers) 
+            return self.sf.Lead.create(prospect_data) 
         
 
     def _process_result(self, result):
