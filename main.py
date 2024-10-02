@@ -170,7 +170,7 @@ if __name__ == "__main__":
     gateway = MessageGateway(
         webhook_url=os.environ.get("WEBHOOK_URL"),
         assistant=ast,
-        host="127.0.0.1", port=int(os.environ.get("PORT", 3000)),
+        host="0.0.0.0", port=int(os.environ.get("PORT", 3000)),
         # VAPI uses streaming mode, no need for adaptive mode
     )
 
