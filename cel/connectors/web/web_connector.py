@@ -24,10 +24,12 @@ class WebConnector(BaseConnector):
     def __init__(
         self,
         web_url: str = None,
+        web_api_key: str = None,
         stream_mode: StreamMode = StreamMode.FULL,
     ):
         log.debug("Creating Web connector")
         self.web_url = web_url or os.environ.get("WEB_URL")
+        self.web_api_key = web_api_key or os.environ.get("WEB_API_KEY")
         log.debug(self.web_url)
         self.prefix = "/web"
         self.endpoint = "/message"
@@ -44,7 +46,6 @@ class WebConnector(BaseConnector):
             data = await request.json()
             log.debug(data)
             background_tasks.add_task(self._process_message, data)
-            print(data, "+" * 30)
             return {"status": "ok"}
 
         @router.post(f"{self.endpoint}/pruebas")
@@ -75,7 +76,12 @@ class WebConnector(BaseConnector):
 
     # Funcion que me retorna el status de recibido del mensaje
     async def send_text_message(
-        self, lead: WebLead, text: str, metadata: dict = {}, is_partial: bool = True
+        self,
+        lead: WebLead,
+        text: str,
+        metadata: dict = {},
+        is_partial: bool = True,
+        is_truncated: bool = False,
     ):
         """Envía un mensaje de texto parcial o completo y lo comunica al middleware.
 
@@ -85,17 +91,34 @@ class WebConnector(BaseConnector):
             - metadata [dict]: Metadatos del mensaje
             - is_partial [bool]: Indica si el mensaje es parcial
         """
+
         async with httpx.AsyncClient() as client:
             try:
+                if lead.metadata.get("messageId"):
+                    conversation = lead.session_id
+                    message = lead.metadata.get("messageId")
+                else:
+                    conversation = lead.session_id
+                    message = None
+
                 data = {
-                    "conversation":f"{lead.session_id}",
+                    "conversation": conversation,
+                    "message": message,
                     "role": "assistant",
-                    "content": text
+                    "content": text,
+                    "is_truncated": is_truncated,
                 }
-                # print("el mensaje es el siguiente:" + text)
+
+                # Configurar el encabezado correctamente con Bearer Token
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.web_api_key}",
+                }
+
                 response = await client.post(
                     f"{self.web_url}",
-                    json=data
+                    json=data,
+                    headers=headers,
                 )
                 log.debug(f"response for the front: {response.status_code}")
             except Exception as e:
@@ -136,11 +159,13 @@ class WebConnector(BaseConnector):
             assert isinstance(
                 message, OutgoingTextMessage
             ), "message must be an instance of OutgoingTextMessage"
+
             await self.send_text_message(
                 lead,
                 message.content,
                 metadata=message.metadata,
                 is_partial=message.is_partial,
+                is_truncated=message.is_truncated,
             )
 
         if message.type == OutgoingMessageType.SELECT:

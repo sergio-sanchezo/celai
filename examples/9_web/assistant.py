@@ -7,12 +7,12 @@ import sys
 from dotenv import load_dotenv
 
 # Cargar el archivo .env correcto según el entorno
-env = os.getenv('ENV', 'development')  # Por defecto, usa 'development'
+env = os.getenv("ENV", "development")  # Por defecto, usa 'development'
 
-if env == 'production':
-    load_dotenv('.env.production')
+if env == "production":
+    load_dotenv(".env.production")
 else:
-    load_dotenv('.env.development')
+    load_dotenv(".env.development")
 
 # REMOVE THIS BLOCK IF YOU ARE USING THIS SCRIPT AS A TEMPLATE
 # -------------------------------------------------------------
@@ -38,9 +38,13 @@ from cel.gateway.message_gateway import StreamMode
 
 import os
 from loguru import logger as log
+
 log.remove()
-log.add(sys.stdout, format="<level>{level: <8}</level> | "
-    "<cyan>{file}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>")
+log.add(
+    sys.stdout,
+    format="<level>{level: <8}</level> | "
+    "<cyan>{file}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+)
 
 # Setup prompt
 # Read from the file prompt.txt
@@ -97,12 +101,16 @@ gateway = MessageGateway(
     webhook_url=os.environ.get("WEBHOOK_URL"),
     assistant=ast,
     host="0.0.0.0",
-    port=3000,
+    port=4000,
 )
 
 # VoIP Connector
 
-conn = WebConnector(web_url="http://localhost:3001/messages", stream_mode=StreamMode.DIRECT)
+conn = WebConnector(
+    web_url="http://localhost:5000/messages",
+    stream_mode=StreamMode.DIRECT,
+    web_api_key=os.environ.get("WEB_API_KEY"),
+)
 
 # Register the connector with the gateway
 gateway.register_connector(conn)
