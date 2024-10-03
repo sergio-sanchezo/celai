@@ -1,28 +1,83 @@
+# services/salesforce.py
+
+import os
 from simple_salesforce import Salesforce
 
-# TODO: Replace with envs
-sf = Salesforce(username="sundevs@netline.net.netline", password="NetlineIA@123ku6KPaqc87uPFKYCOeiaDtcY2", consumer_key="3MVG9j6uMOMC1DNgX0ameohUtWQ1ty1Ue_i0hffxZpyLP9ph1kneWvriHqsM826sp56epAmQK_QRp9.UqGEwW", consumer_secret="F1459C64D77D67F1DF7CA4694BD5C504B1B774114E5A2FF526815CAE0286B62E", domain="test")
+class SalesforceService:
+    def __init__(self, username, password, security_token, consumer_key, consumer_secret, domain="test"):
+        # Inicializar Salesforce utilizando los parámetros recibidos
+        self.sf = Salesforce(
+            username=username,
+            password=password + security_token,
+            consumer_key=consumer_key,
+            consumer_secret=consumer_secret,
+            domain=domain
+        )
 
-def getUserByPhone(phone):
-    result = sf.query(f"SELECT Id, Name, RUT__c, Email_Empresa__c, Phone FROM Account WHERE Phone = '{phone}' LIMIT 1")
-    if result['records']:
-        record = result['records'][0]
-        # Remove the 'attributes' key from the record
-        if 'attributes' in record:
-            del record['attributes']
-        return record
-    return {}
+    def get_user_by_phone(self, phone):
+        result = self.sf.query(f"SELECT Id, Name, RUT__c, Email_Empresa__c, Phone FROM Account WHERE Phone = '{phone}' LIMIT 1")
+        return self._process_result(result)
 
-def getUserByRUT(rut):
-    result = sf.query(f"SELECT Id, Name, RUT__c, Email_Empresa__c, Phone FROM Account WHERE RUT__c = '{rut}' LIMIT 1")
-    if result['records']: 
-        record = result['records'][0]
-        # Remove the 'attributes' key from the record
-        if 'attributes' in record:
-            del record['attributes']
-        return record
-    return {}
+    def get_user_by_rut(self, rut):
+        result = self.sf.query(f"SELECT Id, Name, RUT__c, Email_Empresa__c, Phone FROM Account WHERE RUT__c = '{rut}' LIMIT 1")
+        return self._process_result(result)
+    
+    def get_prospect_by_phone(self, phone):
+        result = self.sf.query(f"SELECT Id, FirstName, LastName FROM Lead WHERE Phone = '{phone}' LIMIT 1")
+        return self._process_result(result)
 
-def createProspect(data):
-    #
-    return result
+    def create_prospect(self, data):
+        prospect_data = {
+            'FirstName': data.get('first_name', 'Sergio'),
+            'LastName': data.get('last_name', 'Sanchez'),
+            'Company': data.get('company', 'Sundevs'),
+            'RUT__c': data.get('rut', '7172494'),
+            'Phone': data['phone'],
+            'Email': data['email'],
+            'Consulta_o_comentario__c': data['comment'],
+            'Status': 'No atendido',
+            "OwnerId": "00GEk000004qNB7",
+
+        }
+        return self.sf.Lead.create(prospect_data)
+    
+    def create_support_case(self, data):
+        case_data = {
+            'Subject': 'Soporte para prospecto existente',
+            'Description': data.get('Consulta_o_comentario__c', ''),
+            'Status': 'Nuevo',
+            'Origin': 'Web',
+            "OwnerId": "00GEk000004qNB7"
+        }
+        return self.sf.Case.create(case_data)
+        
+    def create_prospect_by_campaign(self, data):
+        arguments = data.get("message", {}).get("toolCalls", [])[0].get("function", {}).get("arguments", {})
+        phone = arguments.get('Phone', '')  
+
+        existing_prospect = self.get_prospect_by_phone(phone)
+
+        if existing_prospect:
+            return self.create_support_case(data)
+        else:
+            prospect_data = {
+                'FirstName': arguments.get('FirstName', ''),
+                'LastName': arguments.get('LastName', ''),
+                'Company': arguments.get('Company', 'Unknown'),
+                'RUT__c': arguments.get('RUT__c', ''),
+                'Phone': phone,
+                'Email': arguments.get('Email', ''),
+                'Consulta_o_comentario__c': arguments.get('Consulta_o_comentario__c', ''),
+                'Status': 'No atendido',
+                "OwnerId": "00GEk000004qNB7"
+            }
+            return self.sf.Lead.create(prospect_data) 
+        
+    def _process_result(self, result):
+        if result['records']:
+            record = result['records'][0]
+            if 'attributes' in record:
+                del record['attributes']
+            return record
+        return {}
+

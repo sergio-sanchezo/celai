@@ -127,6 +127,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env.development
+.env.production
 
 # Spyder project settings
 .spyderproject
@@ -166,3 +168,4 @@ test.py
 .examples/
 DEV.md
 .webui_*
+qrcode.png

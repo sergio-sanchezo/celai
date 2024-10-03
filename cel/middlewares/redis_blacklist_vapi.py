@@ -19,7 +19,9 @@ class RedisBlackListVapiMiddleware:
         
     async def __call__(self, message: Message, connector: BaseConnector, assistant: BaseAssistant):
         assert isinstance(message, Message), "Message must be a Message object"
-        
+
+        log.warning(f"Checking if user {message.lead.to_dict().get('call_object', {}).get('customer', {}).get('number', '+56352280778')} is blacklisted")
+
         id =  message.lead.to_dict().get("call_object", {}).get("customer", {}).get("number", "+56352280778")
         source = message.lead.connector_name
 
