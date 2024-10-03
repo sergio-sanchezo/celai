@@ -27,7 +27,11 @@ class WebLead(ConversationLead):
 
     @classmethod
     def from_web_message(cls, message: dict, **kwargs):
+
         session_id = str(message.get("conversation"))
+        metadata = {
+            "messageId": message.get("message"),
+        }
         conversation_peer = ConversationPeer(
             name=message.get("name", "unknown"),
             id=session_id,
@@ -36,5 +40,8 @@ class WebLead(ConversationLead):
             email=None,
         )
         return WebLead(
-            session_id=session_id, conversation_from=conversation_peer, **kwargs
+            session_id=session_id,
+            metadata=metadata,
+            conversation_from=conversation_peer,
+            **kwargs,
         )

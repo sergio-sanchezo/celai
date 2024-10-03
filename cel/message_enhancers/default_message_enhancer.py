@@ -4,20 +4,25 @@ from cel.gateway.model.outgoing.outgoing_message import OutgoingMessage
 from cel.gateway.model.outgoing.outgoing_message_text import OutgoingTextMessage
 
 
-
 class DefaultMessageEnhancer:
     """This dummy enhancer will map each input text from genAI to a simple text message."""
-    
+
     def __init__(self):
-        log.warning("Creating default message enhancer.\
-                    This is a dummy enhancer. You should try smarter enhancers.")        
-                
-    async def __call__(self, lead: ConversationLead, 
-                  text: str, 
-                  is_partial: bool = True) -> OutgoingMessage:
-        
-        return OutgoingTextMessage(
-            lead=lead,
-            content=text
+        log.warning(
+            "Creating default message enhancer.\
+                    This is a dummy enhancer. You should try smarter enhancers."
         )
 
+    async def __call__(
+        self,
+        lead: ConversationLead,
+        text: str,
+        is_partial: bool = True,
+        is_truncated: bool = False,
+    ) -> OutgoingMessage:
+
+        return OutgoingTextMessage(
+            lead=lead,
+            content=text,
+            is_truncated=is_truncated,
+        )
