@@ -17,7 +17,8 @@ from cel.gateway.message_gateway import MessageGateway
 from cel.assistants.macaw.macaw_assistant import MacawAssistant
 from cel.assistants.function_response import RequestMode
 from cel.prompt.prompt_template import PromptTemplate
-from cel.rag.providers.markdown_rag import MarkdownRAG
+from cel.rag.providers.custom_rag import CustomRAGRetriever
+from cel.rag.stores.custom.custom_store import BackendStore
 from cel.connectors.vapi.vapi_connector import VAPIConnector
 from cel.middlewares import SessionMiddleware, RedisBlackListVapiMiddleware
 from cel.gateway.request_context import RequestContext
@@ -29,8 +30,6 @@ from cel.assistants.common import Param
 from cel.assistants.macaw.macaw_settings import MacawSettings
 from cel.assistants.function_context import FunctionContext
 import json
-
-
 
 if __name__ == "__main__":
 
@@ -46,7 +45,7 @@ if __name__ == "__main__":
 
     # Registrar middlewares
     auth = SessionMiddleware()
-    blacklist = RedisBlackListVapiMiddleware(redis="redis://localhost:6379/0")
+    blacklist = RedisBlackListVapiMiddleware(redis=os.getenv("REDIS_URL"))
 
     # Configurar el prompt desde el archivo prompt.txt
     prompt = open("prompt.txt", "r", encoding="utf-8").read()
@@ -71,13 +70,16 @@ if __name__ == "__main__":
         settings=agent_settings
     )
 
-    mdm = MarkdownRAG("demo", file_path="qa.md", split_table_rows=True, encoding="utf-8")
+    backend_store = BackendStore(
+        base_url=str(os.environ.get("BACKEND_URL")),  # Replace with your backend URL
+        api_key=str(os.environ.get("BACKEND_API_KEY")),  # Replace with your API key
+        account_id=str(os.environ.get("ACCOUNT_ID"))  # Replace with your account ID
+    )
 
-    # Cargar desde el archivo markdown, luego dividir el contenido y almacenarlo.
-    mdm.load()
+    retriever = CustomRAGRetriever(store=backend_store)
 
     # Registrar el modelo RAG con el asistente
-    ast.set_rag_retrieval(mdm)
+    ast.set_rag_retrieval(retriever)
 
     @ast.function("buscarPorRut", "El cliente proporciona su RUT para buscar su información", [
         Param(name="RUT", type="string", description="El RUT del cliente por ej 12345678", required=True)
@@ -131,7 +133,7 @@ if __name__ == "__main__":
         Param(name="comment", type="string", description="Resumen del producto o servicio sobre el cual se está interesado", required=True)
     ])
     async def handle_crear_prospecto(session, params, ctx: FunctionContext):
-        log.critical(f"Got crearProspecto call with params: {params}")
+        log.info(f"Got crearProspecto call with params: {params}")
 
         attempts = 0
         max_attempts = 3
@@ -168,7 +170,7 @@ if __name__ == "__main__":
     gateway = MessageGateway(
         webhook_url=os.environ.get("WEBHOOK_URL"),
         assistant=ast,
-        host="127.0.0.1", port=int(os.environ.get("PORT", 3000)),
+        host="0.0.0.0", port=int(os.environ.get("PORT", 3000)),
         # VAPI uses streaming mode, no need for adaptive mode
     )
 

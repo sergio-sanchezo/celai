@@ -3,7 +3,6 @@ import datetime
 from cel.gateway.model.attachment import FileAttachment
 from cel.gateway.model.conversation_lead import ConversationLead
 
-
 class OutgoingMessageType:
     TEXT = "text"
     IMAGE = "image"
@@ -12,7 +11,6 @@ class OutgoingMessageType:
     DOCUMENT = "document"
     LOCATION = "location"
     CONTACT = "contact"
-
     SELECT = "select"
     LINK = "link"
 
